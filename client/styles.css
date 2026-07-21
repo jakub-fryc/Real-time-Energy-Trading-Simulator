@@ -1,0 +1,199 @@
+* {
+  font-family: "Montserrat",system-ui, sans-serif;
+}
+
+.container {
+  margin: auto;
+  max-width: 80%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.trades-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px; /* mezery mezi divy */
+  padding: 16px;
+  align-items: center;
+}
+
+.trades-container > .offers-half {
+  align-items: center;
+}
+
+.offers-container {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+}
+
+.offers-half {
+  box-sizing: border-box;
+}
+
+.hour-card {
+  background-color: rgb(255, 255, 255);
+  display: inline-block;
+  padding: 5px;
+  position: relative;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 20px;
+}
+.hour-list-card {
+  background-color: rgb(255, 255, 255);
+  display: inline-block;
+  padding: 5px;
+  position: relative;
+  border-radius: 15px;
+  font-size: 20px;
+}
+.list-card {
+  margin-right: 5px;
+}
+.list-card:last-child {
+  margin-right: 0px;
+  background-color: #d3d3d3;
+}
+.card-timer {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+.container > div {
+  border-radius: 30px;
+  background-color: orange;
+  border: 1px solid rgb(255, 255, 255);
+  font-size: 30px;
+  text-align: center;
+}
+
+.trade-card {
+  display: inline-block;
+  border-radius: 10px;
+  padding-right: 5px;
+  padding-left: 5px;
+}
+.trade-card.plus {
+  background-color: #90ee90;
+}
+.trade-card.minus {
+  background-color: #ff474c;
+}
+
+.soon-expired-3 {
+  outline: 5px solid rgb(255, 230, 0);
+}
+.soon-expired-2 {
+  outline: 5px solid rgb(255, 115, 0);
+}
+.soon-expired-1 {
+  outline: 5px solid #ff474c;
+}
+
+.already-taken {
+  background-color: gray;
+  outline: 5px solid rgb(61, 61, 61);
+  cursor: not-allowed;
+}
+
+.stats {
+  display: inline-block;
+  background-color: #ffa500;
+  padding: 30px;
+  border-radius: 30px;
+  margin-left: 10%;
+  margin-bottom: 20px;
+}
+.stats-heading {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.stats-heading h2 {
+  font-size: 20px;
+  color: #fff;
+}
+
+.offers-container > .trades-container {
+  gap: 10px;
+}
+
+.stats-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stats-cell h2 {
+  font-size: 15px;
+}
+
+h2 {
+  margin: 0px;
+}
+p {
+  margin: 0px;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+
+
+#prompt-btn{
+  background-color: #ffa500;
+  border: 0;
+  color: white;
+  border-radius: 5px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#prompt-btn:hover{
+  transform: scale(1.1);
+}
+
+.custom-dropdown { position: relative; width: 200px; }
+.selected { background: #eee; padding: 10px; cursor: pointer; }
+.options { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; }
+.option { padding: 10px; cursor: pointer; }
+.option:hover { background: #f0f0f0; }
+
+.custom-dropdown.open .options { display: block; }  
+
+.popup {
+  background-color: white;
+  position: relative;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  z-index: 1002;
+  max-width: 50vw;
+}
+
+.popup .background{
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('img/bd.png');
+  background-size: cover;
+  background-position:center;
+  opacity: 0.1; 
+  pointer-events: none; 
+  z-index: 1001;
+}

@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Energetická Burza - Trading Terminal</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg-main: #0f172a;
+        --bg-panel: #1e293b;
+        --bg-card: #334155;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --accent-green: #22c55e;
+        --accent-red: #ef4444;
+        --accent-blue: #3b82f6;
+        --border-color: #475569;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", sans-serif;
+      }
+
+      body {
+        background-color: var(--bg-main);
+        color: var(--text-main);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* --- Top Stats Bar --- */
+      .stats-header {
+        background-color: var(--bg-panel);
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .stats-header h1 {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--accent-blue);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .stats-grid {
+        display: flex;
+        gap: 2rem;
+      }
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+
+      .stat-item h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .stat-item p {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .money-stat h2 {
+        color: #fbbf24;
+      }
+      .time-stat h2 {
+        color: var(--accent-blue);
+      }
+
+      /* --- Main Layout --- */
+      .dashboard {
+        display: flex;
+        flex: 1;
+        padding: 1.5rem;
+        gap: 1.5rem;
+        height: calc(100vh - 80px);
+      }
+
+      .panel {
+        background-color: var(--bg-panel);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--border-color);
+      }
+
+      .panel-header {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+      }
+
+      /* History Panel (Left) */
+      .history-panel {
+        flex: 1;
+        max-width: 350px;
+        overflow-y: auto;
+      }
+
+      .hour-list-card {
+        display: grid;
+        grid-template-columns: 40px 1fr 1fr 1fr;
+        align-items: center;
+        background-color: var(--bg-card);
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        text-align: center;
+      }
+
+      .hour-list-card h2 {
+        font-size: 1rem;
+        color: var(--text-muted);
+      }
+
+      .trade-card {
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+      }
+
+      .plus {
+        color: var(--accent-green);
+        background-color: rgba(34, 197, 94, 0.1);
+      }
+      .minus {
+        color: var(--accent-red);
+        background-color: rgba(239, 68, 68, 0.1);
+      }
+      .delta {
+        color: #e2e8f0;
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+
+      /* Market Panel (Right) */
+      .market-panel {
+        flex: 3;
+        display: flex;
+        gap: 1.5rem;
+      }
+
+      .market-half {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--bg-panel);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        padding: 1.5rem;
+        overflow-y: auto;
+      }
+
+      .market-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 1rem;
+      }
+
+      /* Interactive Cards */
+      .hour-card {
+        background-color: var(--bg-card);
+        border-radius: 8px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        border: 1px solid transparent;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+      }
+
+      .hour-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent-blue);
+      }
+
+      .hour-card.already-taken {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+        filter: grayscale(1);
+      }
+
+      .hour-card h2.hour {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .card-timer {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+
+      /* Expiration animations */
+      @keyframes pulse-warning {
+        0% {
+          box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        }
+      }
+
+      .soon-expired-3 {
+        border-color: #f59e0b;
+      }
+      .soon-expired-2 {
+        border-color: #f97316;
+      }
+      .soon-expired-1 {
+        border-color: var(--accent-red);
+        animation: pulse-warning 1s infinite;
+      }
+
+      /* --- Overlays & Modals --- */
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(5px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .popup {
+        background-color: var(--bg-panel);
+        padding: 2.5rem;
+        border-radius: 16px;
+        max-width: 500px;
+        width: 90%;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+
+      .popup h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: var(--text-main);
+      }
+
+      .popup h3 {
+        font-size: 1.1rem;
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--accent-blue);
+      }
+
+      .popup p,
+      .popup li {
+        color: var(--text-muted);
+        line-height: 1.6;
+        margin-bottom: 0.5rem;
+      }
+
+      .popup ul {
+        padding-left: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .popup b {
+        color: var(--text-main);
+      }
+
+      .highlight-buy {
+        color: var(--accent-green);
+        font-weight: 600;
+      }
+      .highlight-sell {
+        color: var(--accent-red);
+        font-weight: 600;
+      }
+
+      select {
+        width: 100%;
+        padding: 0.75rem;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        color: var(--text-main);
+        border-radius: 8px;
+        margin-top: 0.5rem;
+        outline: none;
+      }
+
+      button {
+        width: 100%;
+        padding: 1rem;
+        background-color: var(--accent-blue);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 1.5rem;
+        transition: background-color 0.2s;
+      }
+
+      button:hover {
+        background-color: #2563eb;
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Navigation / Stats -->
+    <header class="stats-header">
+      <h1>ČEZ Trading Desk</h1>
+      <div class="stats-grid" id="stats-content">
+        <div class="stat-item time-stat">
+          <h2 id="seconds">0s</h2>
+          <p>Zbývající čas</p>
+        </div>
+        <div class="stat-item">
+          <h2 id="bought">0</h2>
+          <p>Koupeno MWh</p>
+        </div>
+        <div class="stat-item">
+          <h2 id="sold">0</h2>
+          <p>Prodáno MWh</p>
+        </div>
+        <div class="stat-item money-stat">
+          <h2 id="money">0 $$$</h2>
+          <p>Peníze</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="dashboard">
+      <!-- History -->
+      <section class="panel history-panel">
+        <div class="panel-header">Historie (Hodiny)</div>
+        <div id="tdc">
+          <!-- Zde se generují historické karty přes JS -->
+        </div>
+      </section>
+
+      <!-- Market -->
+      <section class="market-panel">
+        <!-- Offers -->
+        <div class="market-half">
+          <div class="panel-header" style="color: var(--accent-green)">
+            Dostupné Nákupy (Nabídky)
+          </div>
+          <div class="market-grid" id="offers-half">
+            <!-- Zde se generují nabídky -->
+          </div>
+        </div>
+
+        <!-- Demands -->
+        <div class="market-half">
+          <div class="panel-header" style="color: var(--accent-red)">
+            Dostupné Prodeje (Poptávky)
+          </div>
+          <div class="market-grid" id="demands-half">
+            <!-- Zde se generují poptávky -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const sessionId = getOrCreateSessionId();
+
+      const tradesContainer = document.getElementById("tdc");
+      tradesContainer.innerHTML = "";
+
+      // Připojení k Socket.IO na portu 8000
+      const socket = io("http://localhost:8000", {
+        query: {
+          sessionId: sessionId,
+        },
+      });
+
+      socket.on("offerRoom", (data) => {
+        document.getElementById("offers-half").innerHTML = "";
+        document.getElementById("demands-half").innerHTML = "";
+
+        for (let i = 0; i < data.currentOffers.length; i++) {
+          const offerCard = createHourCard(
+            data.currentOffers[i].hour,
+            data.currentOffers[i].offerValue,
+            true,
+            data.currentOffers[i].lifeTime,
+            data.currentOffers[i].uuid,
+            data.currentOffers[i].state,
+          );
+          const demandCard = createHourCard(
+            data.currentDemands[i].hour,
+            data.currentDemands[i].offerValue,
+            false,
+            data.currentDemands[i].lifeTime,
+            data.currentDemands[i].uuid,
+            data.currentDemands[i].state,
+          );
+
+          offerCard.addEventListener("click", acceptOffer);
+          document.getElementById("offers-half").appendChild(offerCard);
+          document.getElementById("demands-half").appendChild(demandCard);
+        }
+      });
+
+      socket.on("updateHours", (hours) => {
+        createAllHours(hours);
+      });
+
+      socket.on("updateStats", (stats) => {
+        updateStats(stats);
+      });
+
+      socket.on("prompt-start", () => {
+        removeOldOverlay();
+        const overlay = document.createElement("div");
+        overlay.classList.add("overlay");
+        overlay.setAttribute("id", "overlay");
+        overlay.innerHTML = `
+      <div class="popup">
+        <h2>ČEZ Trading Desk</h2>
+        <p>Vítej na energetické burze! Připrav se na obchodování.</p>
+        
+        <h3>Cíl hry</h3>
+        <p>Cílem hry je <span class="highlight-buy">nakoupit</span> a <span class="highlight-sell">prodat</span> co nejvíce MWh v každé hodině. Nákupy a prodeje musí být v rovnováze. Pokud se na konci dne dostaneš do mínusu, hra končí.</p>
+        
+        <h3>Důležité parametry</h3>
+        <ul>
+          <li>Fixní náklad za hodinu: <b>6 $$$</b></li>
+          <li>Penalizace za každý MWh v nerovnováze: <b>4 $$$</b></li>
+          <li>Odměna za každou prodanou MWh: <b>1 $$$</b></li>  
+        </ul>
+        
+        <label for="days" style="display:block; margin-top:10px; color: var(--text-muted); font-size: 0.9rem;">Délka simulace (dny):</label>
+        <select id="days" name="days">
+          <option value="0">1 den</option>
+          <option value="1">2 dny</option>
+          <option value="2">3 dny</option>
+        </select>
+        
+        <button onclick="startGame()">Zahájit obchodování</button>
+      </div>
+      `;
+        document.body.appendChild(overlay);
+      });
+
+      socket.on("day-ended", (data) => {
+        removeOldOverlay();
+        sessionStorage.setItem("continueToken", data.continueToken);
+        const overlay = document.createElement("div");
+        overlay.classList.add("overlay");
+        overlay.setAttribute("id", "overlay");
+        overlay.innerHTML = `
+        <div class="popup">
+          <h2>Konec obchodního dne</h2>
+          <p>Hrozný boss D.B. právě zkontroloval tvé uzávěrky. Nejsi v mínusu, takže jsi přežil do dalšího dne.</p>
+          
+          <h3>Výsledky dnešní seance</h3>
+          <ul>
+            <li>Koupeno MWh: <b>${data.stats.offers}</b></li>
+            <li>Prodáno MWh: <b>${data.stats.demands}</b></li>
+            <li>Rozdíl (Delta) MWh: <b>${data.stats.delta}</b></li>
+            <li>Vyděláno peněz: <b style="color: #fbbf24;">${data.stats.money} $$$</b></li>
+          </ul>
+          
+          <button onclick="nextDay()">Otevřít trh (Další den)</button>
+        </div>
+      `;
+        document.body.appendChild(overlay);
+      });
+
+      socket.on("end-game", (data) => {
+        endGame(data);
+      });
+
+      socket.on("reload-page", () => {
+        setTimeout(() => {
+          location.reload();
+        }, 100);
+      });
+
+      socket.on("lost-game", () => {
+        removeOldOverlay();
+        const overlay = document.createElement("div");
+        overlay.classList.add("overlay");
+        overlay.setAttribute("id", "overlay");
+        overlay.innerHTML = `
+        <div class="popup" style="border-color: var(--accent-red);">
+          <h2 style="color: var(--accent-red);">Bankrot!</h2>
+          <p>Je mi to líto, ale jako obchodník jsi selhal.</p>
+          
+          <h3>Důvod likvidace</h3>
+          <p>Nedodržel jsi rovnováhu nákupů a prodejů a tvůj účet se na konci dne dostal do záporných hodnot. Tvou pozici převzal hrozný boss D.B.</p>
+          
+          <button onclick="startAgain()">Zkusit znovu</button>
+        </div>
+      `;
+        document.body.appendChild(overlay);
+      });
+
+      /* Helper Methods */
+
+      function removeOldOverlay() {
+        const oldOverlay = document.getElementById("overlay");
+        if (oldOverlay) {
+          document.body.removeChild(oldOverlay);
+        }
+      }
+
+      function endGame(stats) {
+        removeOldOverlay();
+        const overlay = document.createElement("div");
+        overlay.classList.add("overlay");
+        overlay.setAttribute("id", "overlay");
+        overlay.innerHTML = `
+        <div class="popup" style="border-color: var(--accent-green);">
+          <h2 style="color: var(--accent-green);">Simulace Dokončena</h2>
+          <p>Gratuluji! Úspěšně jsi překonal nástrahy energetické burzy, pokryl fixní náklady a vyhnul se fatálním penalizacím.</p>
+          
+          <h3>Konečné statistiky</h3>
+          <ul>
+            <li>Celkem koupeno MWh: <b>${stats.offers}</b></li>
+            <li>Celkem prodáno MWh: <b>${stats.demands}</b></li>
+            <li>Čistý zisk: <b style="color: #fbbf24;">${stats.money} $$$</b></li>
+          </ul>
+          
+          <button onclick="startAgain()">Spustit novou simulaci</button>
+        </div>
+      `;
+        document.body.appendChild(overlay);
+      }
+
+      function startAgain() {
+        socket.emit("start-again");
+      }
+
+      function nextDay() {
+        const token = sessionStorage.getItem("continueToken");
+        socket.emit("nextDay", token, (response) => {
+          if (response.success) {
+            removeOldOverlay();
+          }
+        });
+      }
+
+      function startGame() {
+        const userDayInput = document.getElementById("days");
+        socket.emit("start-game", userDayInput.value);
+        removeOldOverlay();
+      }
+
+      function updateStats(stats) {
+        const seconds = document.getElementById("seconds");
+        const money = document.getElementById("money");
+        const sold = document.getElementById("sold");
+        const bought = document.getElementById("bought");
+
+        seconds.textContent = stats.playTime + "s";
+        money.textContent = stats.money + " $$$";
+        sold.textContent = stats.demands;
+        bought.textContent = stats.offers;
+      }
+
+      function createAllHours(hours) {
+        tradesContainer.innerHTML = "";
+        hours.forEach((element, index) => {
+          const hourListCard = document.createElement("div");
+          hourListCard.classList.add("hour-list-card");
+
+          const hour = document.createElement("h2");
+          hour.textContent = index + "h";
+
+          const offers = document.createElement("p");
+          const demands = document.createElement("p");
+          const delta = document.createElement("p");
+
+          offers.classList.add("trade-card", "plus");
+          demands.classList.add("trade-card", "minus");
+          delta.classList.add("trade-card", "delta");
+
+          offers.textContent = "+" + element.offers;
+          demands.textContent = "-" + element.demands;
+          delta.textContent =
+            (element.offers - element.demands > 0 ? "+" : "") +
+            (element.offers - element.demands);
+
+          hourListCard.appendChild(hour);
+          hourListCard.appendChild(offers);
+          hourListCard.appendChild(demands);
+          hourListCard.appendChild(delta);
+
+          tradesContainer.appendChild(hourListCard);
+        });
+      }
+
+      function createHourCard(
+        hourValue,
+        value,
+        isOffer,
+        countdown,
+        uuid,
+        state,
+      ) {
+        const hourCard = document.createElement("div");
+        hourCard.classList.add("hour-card");
+        hourCard.dataset.uuid = uuid;
+
+        if (state === "taken") {
+          hourCard.classList.add("already-taken");
+        } else {
+          hourCard.addEventListener("click", acceptOffer);
+        }
+
+        const hour = document.createElement("h2");
+        hour.classList.add("hour");
+        hour.textContent = hourValue + "h";
+
+        const hourTimer = document.createElement("p");
+        hourTimer.classList.add("card-timer");
+        if (countdown) {
+          hourTimer.textContent = countdown + "s";
+        }
+
+        const tradeCard = document.createElement("p");
+        tradeCard.classList.add("trade-card");
+        if (value) {
+          tradeCard.textContent = value + " MWh";
+        }
+
+        if (typeof isOffer == "boolean" && isOffer === true) {
+          tradeCard.classList.add("plus");
+          tradeCard.textContent = "+ " + tradeCard.textContent;
+        } else {
+          tradeCard.classList.add("minus");
+          tradeCard.textContent = "- " + tradeCard.textContent;
+        }
+
+        switch (countdown) {
+          case 3:
+            hourCard.classList.add("soon-expired-3");
+            break;
+          case 2:
+            hourCard.classList.add("soon-expired-2");
+            break;
+          case 1:
+            hourCard.classList.add("soon-expired-1");
+            break;
+        }
+
+        hourCard.appendChild(hourTimer);
+        hourCard.appendChild(hour);
+        hourCard.appendChild(tradeCard);
+
+        return hourCard;
+      }
+
+      function getOrCreateSessionId() {
+        let sessionId = localStorage.getItem("sessionId");
+        if (!sessionId) {
+          sessionId = Math.random().toString(36).substring(2);
+          localStorage.setItem("sessionId", sessionId);
+        }
+        return sessionId;
+      }
+
+      function acceptOffer(event) {
+        const card = event.currentTarget;
+        const uuid = card.dataset.uuid;
+        if (!uuid) {
+          return;
+        }
+        socket.emit("acceptOffer", uuid);
+        card.classList.add("already-taken");
+      }
+    </script>
+  </body>
+</html>

@@ -24,7 +24,7 @@ import { v4 as uuidv4 } from "uuid";
 const __dirname = import.meta.dirname;
 
 const app = express();
-app.use(express.static(path.join(__dirname, "..", "client")));
+app.use(express.static(path.join(__dirname, "client")));
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -34,7 +34,7 @@ const io = new Server(server, {
 const port = process.env.PORT || 8000;
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "client", "index.html"));
+  res.sendFile(path.join(__dirname, "client", "index.html"));
 });
 
 io.on("connection", async (socket) => {

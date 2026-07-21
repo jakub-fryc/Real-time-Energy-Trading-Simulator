@@ -421,10 +421,10 @@
       const tradesContainer = document.getElementById("tdc");
       tradesContainer.innerHTML = "";
 
-      // Připojení k Socket.IO na portu 8000
-      const socket = io("http://localhost:8000", {
+      // Připojení k Socket.IO
+      const socket = io({
         query: {
-          sessionId: sessionId,
+          sessionId,
         },
       });
 

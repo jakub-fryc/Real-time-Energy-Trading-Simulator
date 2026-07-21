@@ -170,4 +170,4 @@ http://localhost:8000
 
 ## 📄 Licence
 
-Tento projekt je dostupný pod licencí **MIT**.
+Tento projekt je dostupný pod licencí **MIT**

@@ -1,6 +1,13 @@
 import constants from "../utils/constants.js";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const SESSIONS_DIR = path.join(__dirname, "..", "sessions");
 
 export function generateOffer() {
   const offerValue = Math.floor(Math.random() * 25 + 1);
@@ -24,7 +31,7 @@ export function generateOffer() {
 }
 
 export async function saveSession(sessionId, sessionData) {
-  const sessionPath = `../server/sessions/${sessionId}.json`;
+  const sessionPath = path.join(SESSIONS_DIR, `${sessionId}.json`);
   const plainData = {
     ...sessionData,
     currentActiveOffers: Object.fromEntries(sessionData.currentActiveOffers),
@@ -34,12 +41,12 @@ export async function saveSession(sessionId, sessionData) {
 }
 
 export async function removeSession(sessionId) {
-  const sessionPath = `../server/sessions/${sessionId}.json`;
-  await fs.rm(sessionPath);
+  const sessionPath = path.join(SESSIONS_DIR, `${sessionId}.json`);
+  await fs.rm(sessionPath, { force: true });
 }
 
 export async function loadSession(sessionId) {
-  const sessionPath = `../server/sessions/${sessionId}.json`;
+  const sessionPath = path.join(SESSIONS_DIR, `${sessionId}.json`);
   try {
     const json = await fs.readFile(sessionPath, "utf-8");
     const data = JSON.parse(json);
@@ -119,7 +126,7 @@ export function hasLostGame(state, day) {
 }
 
 export function getPenalty(state, day) {
-    let penalty = 0;
+  let penalty = 0;
   state.days[day].sessionHours.forEach((hour) => {
     const difference = diff(hour.offers, hour.demands);
     penalty += difference * constants.penaltyPerMWh;
